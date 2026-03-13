@@ -9,14 +9,17 @@ import {
 
 type Fetcher = (path: string, params?: Record<string, unknown>) => Promise<Response>;
 
-function pickFetcher(requestPath: string): { path: string; fetcher: Fetcher } {
+function pickFetcher(requestPath: string, openAlexApiKey?: string): { path: string; fetcher: Fetcher } {
     const segments = requestPath.split("/").filter(Boolean);
     const [source, ...rest] = segments;
     const routedPath = `/${rest.join("/")}`;
 
     switch (source) {
         case "openalex":
-            return { path: routedPath, fetcher: openAlexFetch };
+            return {
+                path: routedPath,
+                fetcher: (p, params) => openAlexFetch(p, params, { apiKey: openAlexApiKey }),
+            };
         case "crossref":
             return { path: routedPath, fetcher: crossrefFetch };
         case "orcid":
@@ -32,9 +35,9 @@ function pickFetcher(requestPath: string): { path: string; fetcher: Fetcher } {
     }
 }
 
-export function createScholarlyGraphApiFetch(): ApiFetchFn {
+export function createScholarlyGraphApiFetch(openAlexApiKey?: string): ApiFetchFn {
     return async (request) => {
-        const { path, fetcher } = pickFetcher(request.path);
+        const { path, fetcher } = pickFetcher(request.path, openAlexApiKey);
         const response = await fetcher(path, request.params as Record<string, unknown> | undefined);
 
         if (!response.ok) {

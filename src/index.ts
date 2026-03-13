@@ -10,6 +10,7 @@ export { ScholarlyGraphDataDO };
 interface ScholarlyGraphEnv {
     SCHOLARLY_GRAPH_DATA_DO: DurableObjectNamespace;
     CODE_MODE_LOADER: WorkerLoader;
+    OPENALEX_API_KEY?: string;
 }
 
 export class MyMCP extends McpAgent {
@@ -36,10 +37,6 @@ export default {
                 status: 200,
                 headers: { "content-type": "text/plain" },
             });
-        }
-
-        if (url.pathname === "/sse" || url.pathname === "/sse/message") {
-            return MyMCP.serveSSE("/sse", { binding: "MCP_OBJECT" }).fetch(request, env, ctx);
         }
 
         if (url.pathname === "/mcp") {

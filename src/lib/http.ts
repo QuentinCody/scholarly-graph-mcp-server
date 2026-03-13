@@ -36,14 +36,26 @@ function scholarlyFetch(
 export function openAlexFetch(
     path: string,
     params?: Record<string, unknown>,
-    opts?: ScholarlyFetchOptions,
+    opts?: ScholarlyFetchOptions & { apiKey?: string },
 ): Promise<Response> {
+    // OpenAlex: use api_key if available, otherwise fall back to mailto polite pool.
+    const mergedParams: Record<string, unknown> = { ...params };
+    if (opts?.apiKey) {
+        mergedParams.api_key = opts.apiKey;
+    } else {
+        mergedParams.mailto = mergedParams.mailto ?? "bio-mcp@example.com";
+    }
+
     return scholarlyFetch(
         OPENALEX_BASE,
-        "scholarly-graph-mcp-server/1.0 (bio-mcp; OpenAlex)",
+        "scholarly-graph-mcp-server/1.0 (mailto:bio-mcp@example.com; bio-mcp; OpenAlex)",
         path,
-        params,
-        opts,
+        mergedParams,
+        {
+            ...opts,
+            // OpenAlex can be slow for large work searches — give it more time
+            timeout: opts?.timeout ?? 60_000,
+        },
     );
 }
 

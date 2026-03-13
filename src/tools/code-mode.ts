@@ -14,13 +14,14 @@ import { createScholarlyGraphApiFetch } from "../lib/api-adapter";
 interface CodeModeEnv {
     SCHOLARLY_GRAPH_DATA_DO: DurableObjectNamespace;
     CODE_MODE_LOADER: WorkerLoader;
+    OPENALEX_API_KEY?: string;
 }
 
 export function registerCodeMode(
     server: McpServer,
     env: CodeModeEnv,
 ) {
-    const apiFetch = createScholarlyGraphApiFetch();
+    const apiFetch = createScholarlyGraphApiFetch(env.OPENALEX_API_KEY);
 
     const searchTool = createSearchTool({
         prefix: "scholarly_graph",
@@ -34,6 +35,8 @@ export function registerCodeMode(
         apiFetch,
         doNamespace: env.SCHOLARLY_GRAPH_DATA_DO,
         loader: env.CODE_MODE_LOADER,
+        // OpenAlex can be slow — match the 60s HTTP timeout
+        timeout: 60_000,
     });
     executeTool.register(server as unknown as { tool: (...args: unknown[]) => void });
 }
