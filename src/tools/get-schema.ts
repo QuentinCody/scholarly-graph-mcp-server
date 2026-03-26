@@ -6,7 +6,7 @@ interface SchemaEnv {
     SCHOLARLY_GRAPH_DATA_DO?: unknown;
 }
 
-export function registerGetSchema(server: McpServer, env?: SchemaEnv) {
+export function registerGetSchema(server: McpServer, env?: SchemaEnv): void {
     const handler = createGetSchemaHandler("SCHOLARLY_GRAPH_DATA_DO", "scholarly_graph");
 
     server.registerTool(

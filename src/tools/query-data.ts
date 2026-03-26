@@ -6,7 +6,7 @@ interface QueryEnv {
     SCHOLARLY_GRAPH_DATA_DO?: unknown;
 }
 
-export function registerQueryData(server: McpServer, env?: QueryEnv) {
+export function registerQueryData(server: McpServer, env?: QueryEnv): void {
     const handler = createQueryDataHandler("SCHOLARLY_GRAPH_DATA_DO", "scholarly_graph");
 
     server.registerTool(

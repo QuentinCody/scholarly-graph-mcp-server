@@ -20,7 +20,7 @@ interface CodeModeEnv {
 export function registerCodeMode(
     server: McpServer,
     env: CodeModeEnv,
-) {
+): void {
     const apiFetch = createScholarlyGraphApiFetch(env.OPENALEX_API_KEY);
 
     const searchTool = createSearchTool({
