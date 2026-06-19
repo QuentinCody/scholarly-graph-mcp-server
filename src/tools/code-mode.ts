@@ -31,6 +31,8 @@ export function registerCodeMode(
 
     const executeTool = createExecuteTool({
         prefix: "scholarly_graph",
+        // Verifiable provenance: scholarly_graph_execute results carry a _meta.citation.
+        source: { id: "scholarly_graph", name: "Scholarly Graph" },
         catalog: scholarlyGraphCatalog,
         apiFetch,
         doNamespace: env.SCHOLARLY_GRAPH_DATA_DO,
