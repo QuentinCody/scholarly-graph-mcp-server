@@ -32,7 +32,14 @@ export function registerCodeMode(
     const executeTool = createExecuteTool({
         prefix: "scholarly_graph",
         // Verifiable provenance: scholarly_graph_execute results carry a _meta.citation.
-        source: { id: "scholarly_graph", name: "Scholarly Graph" },
+        // Primary upstream is OpenAlex (CC0) — carry its url + license so the
+        // citation block matches the rest of the fleet (was missing both).
+        source: {
+            id: "scholarly_graph",
+            name: "Scholarly Graph (OpenAlex)",
+            url: "https://openalex.org",
+            license: "CC0 1.0",
+        },
         catalog: scholarlyGraphCatalog,
         apiFetch,
         doNamespace: env.SCHOLARLY_GRAPH_DATA_DO,
