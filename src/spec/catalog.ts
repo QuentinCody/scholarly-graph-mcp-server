@@ -5,7 +5,7 @@ export const scholarlyGraphCatalog: ApiCatalog = {
     baseUrl: "https://multi-api.local/scholarly-graph",
     version: "0.1",
     auth: "optional_api_key",
-    endpointCount: 16,
+    endpointCount: 18,
     notes:
         "- Multi-API REST server. Prefix every path with /openalex, /crossref, /orcid, /ror, or /openaire.\n" +
         "- Catalog-only v1 scaffold. This server is intentionally thin and will grow category coverage over time.\n" +
@@ -19,8 +19,8 @@ export const scholarlyGraphCatalog: ApiCatalog = {
             summary: "Search or filter scholarly works in OpenAlex",
             category: "openalex.works",
             queryParams: [
-                { name: "search", type: "string", required: false, description: "Free-text search query" },
-                { name: "filter", type: "string", required: false, description: "OpenAlex filter expression (e.g. 'from_publication_date:2023-01-01', 'default.search:keyword')" },
+                { name: "search", type: "string", required: false, description: "Free-text search query. NOTE: ranks by text+citation relevance and is topically NOISY — a broad term (e.g. 'breast cancer') sorted by citations pulls in unrelated highly-cited papers. For precision, resolve a concept/topic id via /openalex/concepts or /openalex/topics and use filter=concepts.id:<id> / filter=topics.id:<id> instead." },
+                { name: "filter", type: "string", required: false, description: "OpenAlex filter expression. Comma-combine for AND. Examples: 'from_publication_date:2023-01-01', 'concepts.id:C<id>' and 'topics.id:T<id>' (resolve the id first via /openalex/concepts?search=... or /openalex/topics?search=...), 'primary_topic.id:T<id>', 'default.search:keyword'. Concept/topic filtering is far more precise than free-text 'search' for a subject area." },
                 { name: "sort", type: "string", required: false, description: "Sort order (e.g. 'cited_by_count:desc', 'publication_year:desc', 'relevance_score:desc')" },
                 { name: "select", type: "string", required: false, description: "Comma-separated fields to return. Valid: id,doi,title,display_name,publication_year,publication_date,type,cited_by_count,is_retracted,is_paratext,primary_location,open_access,authorships,biblio,concepts,topics,keywords,mesh,referenced_works,related_works. AVOID 'authorships' if response size is a concern — it is deeply nested and can trigger auto-staging." },
                 { name: "per_page", type: "number", required: false, description: "Results per page (max 200, default 25). Use per_page not per-page." },
@@ -59,6 +59,30 @@ export const scholarlyGraphCatalog: ApiCatalog = {
                 { name: "filter", type: "string", required: false, description: "OpenAlex filter expression (e.g. 'country_code:US', 'type:education')" },
                 { name: "sort", type: "string", required: false, description: "Sort order (e.g. 'cited_by_count:desc')" },
                 { name: "select", type: "string", required: false, description: "Comma-separated fields. Valid: id,ror,display_name,relevance_score,works_count,cited_by_count,country_code,type. Omit to get full objects." },
+                { name: "per_page", type: "number", required: false, description: "Results per page (max 200, default 25)" },
+            ],
+        },
+        {
+            method: "GET",
+            path: "/openalex/concepts",
+            summary: "Search OpenAlex concepts (subject areas) by name to resolve a concept id for filter=concepts.id:<id>",
+            category: "openalex.concepts",
+            queryParams: [
+                { name: "search", type: "string", required: false, description: "Concept name search (e.g. 'breast cancer'). Take the top result's id (format 'C<number>'), then filter works with filter=concepts.id:<id>." },
+                { name: "filter", type: "string", required: false, description: "OpenAlex filter expression (e.g. 'level:0', 'ancestors.id:C<id>')" },
+                { name: "select", type: "string", required: false, description: "Comma-separated fields. Valid: id,display_name,level,description,works_count,cited_by_count,ancestors,related_concepts." },
+                { name: "per_page", type: "number", required: false, description: "Results per page (max 200, default 25)" },
+            ],
+        },
+        {
+            method: "GET",
+            path: "/openalex/topics",
+            summary: "Search OpenAlex topics (the newer, finer-grained subject taxonomy) by name to resolve a topic id for filter=topics.id:<id>",
+            category: "openalex.topics",
+            queryParams: [
+                { name: "search", type: "string", required: false, description: "Topic name search (e.g. 'breast cancer therapy'). Take the top result's id (format 'T<number>'), then filter works with filter=topics.id:<id> or filter=primary_topic.id:<id>." },
+                { name: "filter", type: "string", required: false, description: "OpenAlex filter expression (e.g. 'domain.id:<id>', 'field.id:<id>')" },
+                { name: "select", type: "string", required: false, description: "Comma-separated fields. Valid: id,display_name,description,works_count,cited_by_count,domain,field,subfield,keywords." },
                 { name: "per_page", type: "number", required: false, description: "Results per page (max 200, default 25)" },
             ],
         },
