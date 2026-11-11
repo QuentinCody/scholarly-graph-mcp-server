@@ -1,4 +1,6 @@
 import type { ApiFetchFn } from "@bio-mcp/shared/codemode/catalog";
+import {createCrossrefReader} from "./crossref";
+import {createOpenAlexContentFetch} from "./openalex-content";
 import {
     crossrefFetch,
     openAlexFetch,
@@ -8,6 +10,7 @@ import {
 } from "./http";
 
 type Fetcher = (path: string, params?: Record<string, unknown>) => Promise<Response>;
+const readCrossref = createCrossrefReader();
 
 function pickFetcher(requestPath: string, openAlexApiKey?: string): { path: string; fetcher: Fetcher } {
     const segments = requestPath.split("/").filter(Boolean);
@@ -36,8 +39,11 @@ function pickFetcher(requestPath: string, openAlexApiKey?: string): { path: stri
 }
 
 export function createScholarlyGraphApiFetch(openAlexApiKey?: string): ApiFetchFn {
+    const contentFetch = createOpenAlexContentFetch(openAlexApiKey);
     return async (request) => {
+        if (/^\/+openalex\/+content(?:\/|$)/.test(request.path)) return contentFetch(request);
         const { path, fetcher } = pickFetcher(request.path, openAlexApiKey);
+        if (request.path.split("/").filter(Boolean)[0] === "crossref") return readCrossref({...request, path});
         const response = await fetcher(path, request.params as Record<string, unknown> | undefined);
 
         if (!response.ok) {
@@ -63,6 +69,11 @@ export function createScholarlyGraphApiFetch(openAlexApiKey?: string): ApiFetchF
         }
 
         const data = await response.json();
+        // The usage endpoint echoes its credential. Strip it before returning
+        // the account status to Code Mode, staging, or citation generation.
+        if (request.path.split("/").filter(Boolean)[0] === "openalex" && data && typeof data === "object") {
+            Reflect.deleteProperty(data, "api_key");
+        }
         return { status: response.status, data };
     };
 }

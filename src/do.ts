@@ -14,6 +14,10 @@ export class ScholarlyGraphDataDO extends RestStagingDO {
 
 		const obj = data as Record<string, unknown>;
 
+        if (obj._openalex_content && Array.isArray(obj.chunks)) {
+            return {tableName: "openalex_content_chunks", indexes: ["chunk_index"]};
+        }
+
 		// OpenAlex / Crossref style wrapper — { results: [...] } or { message: { items: [...] } }
 		if (Array.isArray(obj.results)) {
 			const sample = obj.results[0];

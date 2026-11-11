@@ -4,7 +4,7 @@ const OPENALEX_BASE = "https://api.openalex.org";
 const CROSSREF_BASE = "https://api.crossref.org";
 const ORCID_BASE = "https://pub.orcid.org/v3.0";
 const ROR_BASE = "https://api.ror.org/v2";
-const OPENAIRE_BASE = "https://api.openaire.eu";
+const OPENAIRE_BASE = "https://api.openaire.eu/graph/v3";
 
 interface ScholarlyFetchOptions extends Omit<RestFetchOptions, "retryOn"> {
     baseUrl?: string;
@@ -38,21 +38,27 @@ export function openAlexFetch(
     params?: Record<string, unknown>,
     opts?: ScholarlyFetchOptions & { apiKey?: string },
 ): Promise<Response> {
-    // OpenAlex: use api_key if available, otherwise fall back to mailto polite pool.
+    // Current OpenAlex docs allow basic anonymous access. Configured credentials
+    // travel in the supported header, not query strings or a fictitious mailto.
     const mergedParams: Record<string, unknown> = { ...params };
-    if (opts?.apiKey) {
-        mergedParams.api_key = opts.apiKey;
-    } else {
-        mergedParams.mailto = mergedParams.mailto ?? "bio-mcp@example.com";
+    const headers = { ...opts?.headers };
+    const apiKey = opts?.apiKey?.trim();
+    if (apiKey) {
+        delete mergedParams.api_key;
+        headers.Authorization = `Bearer ${apiKey}`;
+    }
+    if (path === "/rate-limit" && !apiKey) {
+        throw new Error("OpenAlex usage lookup requires OPENALEX_API_KEY in the Worker environment.");
     }
 
     return scholarlyFetch(
         OPENALEX_BASE,
-        "scholarly-graph-mcp-server/1.0 (mailto:bio-mcp@example.com; bio-mcp; OpenAlex)",
+        "scholarly-graph-mcp-server/1.0 (bio-mcp; OpenAlex)",
         path,
         mergedParams,
         {
             ...opts,
+            headers,
             // OpenAlex can be slow for large work searches — give it more time
             timeout: opts?.timeout ?? 60_000,
         },
@@ -109,11 +115,16 @@ export function openAireFetch(
     params?: Record<string, unknown>,
     opts?: ScholarlyFetchOptions,
 ): Promise<Response> {
+    // Preserve the old catalog's keyword spelling while using the v3 contract.
+    const { query, ...graphParams } = params ?? {};
+    if (query !== undefined && graphParams.search === undefined) {
+        graphParams.search = query;
+    }
     return scholarlyFetch(
         OPENAIRE_BASE,
         "scholarly-graph-mcp-server/1.0 (bio-mcp; OpenAIRE)",
         path,
-        params,
+        graphParams,
         opts,
     );
 }
